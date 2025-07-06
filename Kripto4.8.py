@@ -1,21 +1,3 @@
-# -*- coding: utf-8 -*-
-"""
-Gelişmiş Kripto Para Destek & Direnç Analiz Aracı v5.1
-Zaman dilimi odaklı profesyonel analiz sistemi
-"""
-
-# Matplotlib backend ayarı - Windows için uyumlu
-import matplotlib
-try:
-    matplotlib.use('TkAgg')
-except:
-    try:
-        matplotlib.use('Qt5Agg')
-    except:
-        matplotlib.use('Agg')  # Son çare - grafik dosyaya kaydedilir
-        print("⚠️ İnteraktif grafik penceresi kullanılamıyor. Grafik dosyaya kaydedilecek.")
-
-from binance.client import Client
 import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
@@ -27,10 +9,18 @@ import matplotlib.patches as mpatches
 import json
 from datetime import datetime, timedelta
 from collections import namedtuple
+from binance.client import Client
+import matplotlib
+try:
+    matplotlib.use('TkAgg')
+except:
+    try:
+        matplotlib.use('Qt5Agg')
+    except:
+        matplotlib.use('Agg')
+        print("⚠️ İnteraktif grafik penceresi kullanılamıyor. Grafik dosyaya kaydedilecek.")
 
 
-
-# Zaman dilimine göre seviye türü ve sayısı haritası (GÜNCELLENDİ)
 TIMEFRAME_LEVEL_CONFIG = {
     '1h': {
         'major': 2, 'minor': 3, 'ema': 1, 'fib': 1, 'psycho': 1, 'volume': 0, 'total': 7,
@@ -55,7 +45,6 @@ TIMEFRAME_LEVEL_CONFIG = {
 }
 
 def calculate_adx(df, period=14):
-    """ADX (Average Directional Index) hesapla"""
     try:
         # True Range hesapla
         df['tr1'] = abs(df['high'] - df['low'])
@@ -90,13 +79,12 @@ def calculate_adx(df, period=14):
 
 class CryptoAnalyzer:
     def __init__(self):
-        """Binance API bağlantısını başlat"""
         try:
             print("🔑 Binance API bağlantısı kuruluyor...")
             
             # API kimlik bilgileri
-            api_key = "cfDC92B191b9B3Ca3D842Ae0e01108CBKI6BqEW6xr4NrPus3hoZ9Ze9YrmWwPFV"
-            api_secret = "f9AbA6a8AD6bC2a97294a212244dda04ETfl0kc4BSUGOtL7m7rNELpt3Jh25SiP"
+            api_key = "****************************************************************"
+            api_secret = "****************************************************************"
             
             self.client = Client(api_key, api_secret)
             self.client.ping()
@@ -107,7 +95,6 @@ class CryptoAnalyzer:
             raise
 
     def fetch_klines(self, symbol, interval, limit):
-        """Binance'ten tarihi mum verilerini çek"""
         try:
             print(f"📊 {symbol} için {interval} verisi çekiliyor...")
             
@@ -131,11 +118,11 @@ class CryptoAnalyzer:
             for col in ['open', 'high', 'low', 'close', 'volume']:
                 df[col] = df[col].astype(float)
             
-            # Hareketli ortalamaları ekle
+            # Hareketli ortalamalar
             df['EMA_50'] = df['close'].ewm(span=50).mean()
             df['EMA_200'] = df['close'].ewm(span=200).mean()
             
-            # ADX hesapla
+            # ADX
             df = calculate_adx(df, period=14)
             
             print(f"✅ {len(df)} mum verisi başarıyla alındı")
@@ -146,7 +133,6 @@ class CryptoAnalyzer:
             return None
 
     def get_timeframe_strategy(self, interval):
-        """Zaman dilimine göre strateji parametrelerini döndür"""
         strategies = {
             Client.KLINE_INTERVAL_1HOUR: {
                 'name': '1 Saatlik (Scalping)',
@@ -192,11 +178,9 @@ class CryptoAnalyzer:
         return strategies.get(interval, strategies[Client.KLINE_INTERVAL_1DAY])
 
     def find_psychological_levels(self, price_range):
-        """Psikolojik seviyeleri bul (yuvarlak sayılar)"""
         psychological_levels = []
         min_price, max_price = min(price_range), max(price_range)
         
-        # Fiyat aralığına göre yuvarlak sayı aralıklarını belirle
         if max_price > 100000:
             step = 10000  # 10K aralıkları
         elif max_price > 10000:
@@ -208,7 +192,6 @@ class CryptoAnalyzer:
         else:
             step = 1      # 1 aralıkları
         
-        # Yuvarlak sayıları bul
         start = int(min_price // step) * step
         end = int(max_price // step + 1) * step
         
@@ -255,12 +238,10 @@ class CryptoAnalyzer:
             }
 
     def _analyze_ma_trend(self, recent_data, current_price):
-        """Hareketli Ortalama Analizi"""
         try:
             ema_50 = recent_data['EMA_50'].iloc[-1]
             ema_200 = recent_data['EMA_200'].iloc[-1]
             
-            # Trend Kuralları
             if current_price > ema_50 > ema_200:
                 return "GÜÇLÜ YÜKSELİŞ"
             elif ema_50 > current_price > ema_200:
@@ -322,7 +303,6 @@ class CryptoAnalyzer:
             return "BELİRSİZ"
 
     def _simplify_trend_direction(self, trend):
-        """Trend yönünü basitleştir (zayıf yükseliş/düşüş de ana yön olarak dönsün)"""
         if "YÜKSELİŞ" in trend:
             return "YÜKSELİŞ"
         elif "DÜŞÜŞ" in trend:
@@ -337,7 +317,6 @@ class CryptoAnalyzer:
             return "BELİRSİZ"
 
     def _integrate_trend_signals(self, ma_trend, swing_trend, adx_trend, df):
-        """3 Göstergeyi Entegre Et - Oylama Sistemi (geliştirilmiş)"""
         try:
             price_change = (df['close'].iloc[-1] - df['close'].iloc[-20]) / df['close'].iloc[-20] * 100
             adx_value = df['adx'].iloc[-1] if not pd.isna(df['adx'].iloc[-1]) else 0
@@ -408,7 +387,7 @@ class CryptoAnalyzer:
             }
 
     def calculate_fibonacci_levels(self, df, lookback_ratio=0.3):
-        """Fibonacci retracement seviyelerini hesapla"""
+        """Fibonacci retracement seviyeleri"""
         lookback_period = int(len(df) * lookback_ratio)
         recent_data = df.tail(lookback_period)
         
@@ -464,20 +443,20 @@ class CryptoAnalyzer:
             
             selected_levels = []
             
-            # 1. Major seviyeleri ekle (öncelik)
+            # 1. Major seviyeler
             selected_levels.extend(major_levels[:min(2, max_levels)])
             
-            # 2. Dinamik seviyeleri ekle
+            # 2. Dinamik seviyeler
             remaining_slots = max_levels - len(selected_levels)
             if remaining_slots > 0:
                 selected_levels.extend(dynamic_levels[:remaining_slots])
             
-            # 3. İkincil seviyeleri ekle (kalan slot varsa)
+            # 3. İkincil seviyeler (kalan slot varsa)
             remaining_slots = max_levels - len(selected_levels)
             if remaining_slots > 0:
                 selected_levels.extend(secondary_levels[:remaining_slots])
             
-            # Güce göre sırala ve en iyilerini seç
+            # Güce göre sıralama ve en iyilerini seçme
             selected_levels.sort(key=lambda x: x['priority_score'], reverse=True)
             
             # Çakışan seviyeleri birleştir
@@ -520,7 +499,7 @@ class CryptoAnalyzer:
         return merged_levels
 
     def _merge_close_levels(self, levels, min_diff=0.01):
-        """Birbirine çok yakın seviyeleri (%1'den az fark) birleştir, en güçlü olanı tut"""
+        """Birbirine çok yakın seviyeleri birleştirme"""
         if not levels:
             return []
         merged = []
@@ -538,7 +517,6 @@ class CryptoAnalyzer:
         return merged
 
     def _find_major_levels(self, df, current_price, n=2, lookback=100):
-        """Üst zaman diliminden major seviyeleri bulur"""
         highs = df['high'].values[-lookback:]
         lows = df['low'].values[-lookback:]
         
@@ -552,7 +530,7 @@ class CryptoAnalyzer:
             if lows[i] < lows[i-1] and lows[i] < lows[i+1]:
                 swing_lows.append(lows[i])
         
-        # En önemli n seviyeyi seç (fiyata yakınlık ve test sayısına göre)
+        # En önemli n seviyeyi seçme (fiyata yakınlık ve test sayısına göre)
         def get_top_levels(levels, current_price, n):
             levels = sorted(set(levels), key=lambda x: (abs(x - current_price), len([p for p in levels if abs(p-x)/x < 0.01])))
             return sorted(levels[:n])
@@ -563,7 +541,6 @@ class CryptoAnalyzer:
         return major_lows, major_highs
 
     def _find_minor_levels(self, df, current_price, n=3, lookback=50, tolerance=0.01):
-        """Mevcut zaman diliminden minor seviyeleri bulur"""
         highs = df['high'].values[-lookback:]
         lows = df['low'].values[-lookback:]
         
@@ -573,13 +550,11 @@ class CryptoAnalyzer:
         
         for i in range(1, len(highs)-1):
             if lows[i] < lows[i-1] and lows[i] < lows[i+1]:
-                # Test sayısını kontrol et
                 test_count = sum(1 for p in lows if abs(p - lows[i])/lows[i] < tolerance)
                 if test_count >= 2:  # En az 2 test
                     minor_lows.append(lows[i])
             
             if highs[i] > highs[i-1] and highs[i] > highs[i+1]:
-                # Test sayısını kontrol et
                 test_count = sum(1 for p in highs if abs(p - highs[i])/highs[i] < tolerance)
                 if test_count >= 2:  # En az 2 test
                     minor_highs.append(highs[i])
@@ -591,7 +566,6 @@ class CryptoAnalyzer:
         return minor_lows, minor_highs
 
     def _add_level(self, container, price, level_type, priority, current_price):
-        """Seviye eklerken standart formatı uygular"""
         distance = abs(price - current_price)/current_price
         test_count = 3 if priority == 'MAJOR' else 2 if priority in ['MINOR', 'FIB'] else 1
         strength = 10 if priority == 'MAJOR' else 6 if priority == 'MINOR' else 4
@@ -606,7 +580,6 @@ class CryptoAnalyzer:
         })
 
     def _find_weekly_levels(self, df, current_price):
-        """1 haftalık grafikler için özel seviye tespiti"""
         supports, resistances = [], []
         
         try:
@@ -682,7 +655,6 @@ class CryptoAnalyzer:
 
 
     def _filter_and_sort_levels(self, levels, current_price, config):
-        """Seviyeleri filtreler ve sıralar"""
         if not levels:
             return []
         
@@ -706,15 +678,14 @@ class CryptoAnalyzer:
         else:
             levels = [lvl for lvl in levels if lvl['test_count'] >= config['min_tests'] or lvl['priority'] in ['MAJOR', 'FIB', 'PSYCHO']]
         
-        # 3. Öncelik sırasına göre sırala (MAJOR > MINOR > DYNAMIC > FIB > PSYCHO)
+        # 3. Öncelik sırasına göre sıralama (MAJOR > MINOR > DYNAMIC > FIB > PSYCHO)
         priority_order = {'MAJOR': 0, 'MINOR': 1, 'DYNAMIC': 2, 'FIB': 3, 'PSYCHO': 4}
         levels.sort(key=lambda x: (priority_order.get(x['priority'], 5), x['distance']))
         
-        # 4. Maksimum seviye sayısını uygula
+        # 4. Maksimum seviye sayısını uygulama
         return levels[:config['total']]
 
     def find_timeframe_optimized_levels(self, df, interval, symbol=None):
-        """Zaman dilimine göre optimize edilmiş destek/direnç seviyelerini bulur"""
         tf_map = {
             Client.KLINE_INTERVAL_1HOUR: '1h',
             Client.KLINE_INTERVAL_4HOUR: '4h',
@@ -773,7 +744,7 @@ class CryptoAnalyzer:
                         else:
                             self._add_level(resistances, ema_value, level_type, 'DYNAMIC', current_price)
             
-            # 5. Psikolojik seviyeler (1 haftalık grafiklerde kullanılmaz)
+            # 5. Psikolojik seviyeler
             if config['psycho'] > 0 and tf_key != '1w':
                 psycho_levels = self.find_psychological_levels([df['low'].min(), df['high'].max()])
                 for level in psycho_levels:
@@ -782,7 +753,7 @@ class CryptoAnalyzer:
                     else:
                         self._add_level(resistances, level, 'Psikolojik Direnç', 'PSYCHO', current_price)
         
-        # Seviyeleri önem sırasına göre filtrele
+        # Seviyeleri önem sırasına göre filtreleme
         supports = self._filter_and_sort_levels(supports, current_price, config)
         resistances = self._filter_and_sort_levels(resistances, current_price, config)
         
@@ -797,12 +768,11 @@ class CryptoAnalyzer:
         return count
 
     def plot_advanced_analysis(self, symbol, df, supports, resistances, strategy, interval):
-        """Gelişmiş analiz grafiği çiz"""
         try:
             # Mevcut grafikleri temizle
             plt.close('all')
             
-            # 1 haftalık grafikler için basit grafik (pencerede gösterilir)
+            # 1 haftalık grafikler için basit grafik
             if interval == Client.KLINE_INTERVAL_1WEEK:
                 print("📈 1 Haftalık grafik oluşturuluyor...")
                 return self._plot_weekly_analysis(symbol, df, supports, resistances, strategy)
@@ -815,7 +785,7 @@ class CryptoAnalyzer:
             # Trend analizi yap
             trend_analysis = self.analyze_trend(df, interval)
             
-            # Fibonacci seviyelerini hesapla (her zaman göster)
+            # Fibonacci seviyelerini hesapla
             fib_levels, swing_high, swing_low = self.calculate_fibonacci_levels(df, strategy['lookback_factor'])
 
             # --- Yükselen ve Düşen Trend Çizgileri ---
@@ -843,7 +813,6 @@ class CryptoAnalyzer:
                                  arrowprops=dict(facecolor='red', arrowstyle='->'))
             # YATAY trend için trend çizgisi çizilmez
 
-            # --- Sadece ana legend kutusu kalsın, ekstra kutucuklar olmasın ---
             legend_items = [
                 ("#008000", "Major Destek"),
                 ("#B22222", "Major Direnç"),
@@ -852,7 +821,6 @@ class CryptoAnalyzer:
                 ("#FFD700", "Psikolojik"),
             ]
             
-            # EMA renklerini zaman dilimine göre ekle (mor renk)
             if interval == Client.KLINE_INTERVAL_1HOUR:
                 legend_items.append(("#8A2BE2", "EMA 50"))
             elif interval == Client.KLINE_INTERVAL_4HOUR:
@@ -884,17 +852,16 @@ class CryptoAnalyzer:
                 fig.patches.append(mpatches.Rectangle((legend_x, legend_y), box_w, box_h, transform=fig.transFigure, facecolor=color, edgecolor='black', linewidth=0.5, alpha=0.7, zorder=10))
                 fig.text(legend_x + box_w + 0.003, legend_y + box_h/2, label, fontsize=7, va='center', ha='left', color='black', alpha=0.7)
 
-            # Trend yazısını kutuların hemen sağına ve aynı hizada ekle
             fig.text(
-                x0 + len(legend_items)*dx + 0.01,  # kutuların hemen sağına
-                y0 + box_h/2,                      # kutularla aynı dikey hizada
+                x0 + len(legend_items)*dx + 0.01,  
+                y0 + box_h/2,                      
                 f"Trend: {trend_result.capitalize()}",
                 fontsize=7,
                 va='center',
                 ha='left',
-                color="green" if trend_result.upper() == "YÜKSELİŞ" else "red",  # büyük harf uyumlu
+                color="green" if trend_result.upper() == "YÜKSELİŞ" else "red",  
                 alpha=0.9,
-                transform=fig.transFigure          # figure koordinat sistemine göre yerleştir
+                transform=fig.transFigure          
             )
 
             # Ana fiyat grafiği
@@ -920,7 +887,7 @@ class CryptoAnalyzer:
             
             # EMA çizgileri artık her zaman dilimi için ayrı ayrı tanımlanıyor
             
-            # Fibonacci seviyelerini çiz (sadece kesik kesik çizgiler)
+            # Fibonacci seviyelerini çizme
             fib_colors = {
                 'fib_23.6': '#FF6B6B',
                 'fib_38.2': '#4ECDC4',
@@ -945,7 +912,7 @@ class CryptoAnalyzer:
                     alpha = 0.6
                 ax1.axhline(y=fib_price, color=color, linestyle=linestyle, 
                            linewidth=linewidth, alpha=alpha)
-                # Fibonacci etiketleri - sol tarafta konumlandır
+                # Fibonacci etiketleri 
                 if fib_price < current_price:
                     ax1.text(df['timestamp'].iloc[5], fib_price, 
                             f'{fib_name}: ${fib_price:.2f}', 
@@ -956,7 +923,7 @@ class CryptoAnalyzer:
                             f'{fib_name}: ${fib_price:.2f}', 
                             va='bottom', ha='left', fontsize=7, color=color,
                             bbox=dict(boxstyle="round,pad=0.1", facecolor='white', alpha=0.7))
-            # EMA çizgileri - Düz çizgi olarak (mor renk)
+            # EMA çizgileri
             if interval == Client.KLINE_INTERVAL_1HOUR:
                 if 'EMA_50' in df.columns:
                     ema_50_value = df['EMA_50'].iloc[-1]
@@ -986,8 +953,6 @@ class CryptoAnalyzer:
                              bbox=dict(boxstyle="round,pad=0.2", facecolor='#8A2BE2', alpha=0.18))
             # 1 Haftalık grafiklerde EMA çizgisi kullanılmıyor
 
-            # Fibonacci seviyeleri artık sadece ana döngüde kesik kesik olarak çiziliyor
-            # Ekstra düz çizgiler kaldırıldı
 
             
             # --- Destek çizgileri ---
@@ -1097,7 +1062,7 @@ class CryptoAnalyzer:
             # X ekseni etiketleri
             plt.setp(ax2.get_xticklabels(), rotation=45, fontsize=8)
             
-            # Analiz özet tablosu (çakışma problemi çözümü)
+            # Analiz özet tablosu
             summary_lines = []
             summary_lines.append(f"📊 {strategy['name'].upper()} ANALİZ ÖZETİ")
             summary_lines.append("-" * 35)
@@ -1106,12 +1071,11 @@ class CryptoAnalyzer:
             summary_lines.append(f"💰 Fiyat Değişimi: %{trend_analysis['price_change']:.1f}")
             summary_lines.append(f"📊 ADX: {trend_analysis['adx_value']:.0f}")
             summary_lines.append(f"Kullanılan Destek: {len(supports)}, Direnç: {len(resistances)}")
-
-            # 1 Saatlik zaman diliminde Fibonacci 38.2% seviyesini özet kutusuna işaretiyle ekle
+      
             if interval == Client.KLINE_INTERVAL_1HOUR and 'fib_38.2' in fib_levels:
                 summary_lines.append(f"🔹 Fibonacci 38.2%: ${fib_levels['fib_38.2']:.2f}")
             
-            # Seviye sayılarını kategorilere göre göster
+            # Seviye sayılarını kategorilere göre gösterme
             major_supports = len([s for s in supports if s.get('priority') == 'MAJOR' or 'Psikolojik' in s['type'] or s['test_count'] >= 4])
             major_resistances = len([r for r in resistances if r.get('priority') == 'MAJOR' or 'Psikolojik' in r['type'] or r['test_count'] >= 4])
             dynamic_supports = len([s for s in supports if 'EMA' in s['type']])
@@ -1136,7 +1100,7 @@ class CryptoAnalyzer:
                 resistance_type = "🥇 MAJOR" if closest_resistance.get('priority') == 'MAJOR' else "📈 DYNAMIC" if 'EMA' in closest_resistance['type'] else "📐 FIB" if 'Fibonacci' in closest_resistance['type'] else "🥉 MINOR"
                 summary_lines.append(f"En Yakın Direnç: %{distance_pct:.1f} yukarıda ({resistance_type})")
             
-            # 1 Saatlik zaman diliminde, özet kutusunda tüm destek ve direnç seviyelerini işaretleriyle listele
+            # 1 Saatlik zaman diliminde, özet kutusunda tüm destek ve direnç seviyelerini işaretleriyle listeleme
             if interval == Client.KLINE_INTERVAL_1HOUR:
                 summary_lines.append("\n🟢 DESTEK SEVİYELERİ:")
                 for s in supports:
@@ -1167,16 +1131,11 @@ class CryptoAnalyzer:
                 if 'fib_100.0' in fib_levels:
                     summary_lines.append(f"  📊 Fibonacci 100%: ${fib_levels['fib_100.0']:.2f}")
             
-            # Özet metnini sol alt köşeye yerleştir (çakışmayı önlemek için)
             summary_text = '\n'.join(summary_lines)
             ax1.text(0.02, 0.02, summary_text, transform=ax1.transAxes, 
                     fontsize=8, verticalalignment='bottom',
                     bbox=dict(boxstyle="round,pad=0.3", facecolor='lightyellow', alpha=0.8))
             
-            # --- Sol üstteki bilgi kutusunu küçült (ör: Fibonacci, Güncel, Kapanış, Yükselen Trend vb.) ---
-            # Eğer ax1.text ile ekleniyorsa, örneğin:
-            # ax1.text(x, y, metin, transform=ax1.transAxes, fontsize=7, va='top', ha='left', alpha=0.7, ...)
-            # Aşağıda örnek bir güncelleme:
             for txt in ax1.texts:
                 txt.set_fontsize(7)
                 txt.set_alpha(0.7)
@@ -1184,7 +1143,6 @@ class CryptoAnalyzer:
             plt.tight_layout()
             plt.subplots_adjust(hspace=0.3)
             
-            # Grafiği göster ve pencereyi açık tut
             print("📈 Grafik penceresi açılıyor...")
             
             # Backend kontrolü
@@ -1205,8 +1163,7 @@ class CryptoAnalyzer:
             return False
 
     def print_detailed_analysis(self, supports, resistances, strategy, current_price, trend_analysis=None):
-        """Detaylı analiz sonuçlarını yazdır"""
-        # Seviye sözlüklerinde test_count ve strength eksikse ekle
+        # Seviye sözlüklerinde test_count ve strength eksikse ekleme
         for level in supports + resistances:
             if 'test_count' not in level:
                 level['test_count'] = 1
@@ -1370,21 +1327,17 @@ class CryptoAnalyzer:
                 print("  🔄 Göstergeler karışık - Düşük güvenilirlik")
 
     def analyze_symbol(self, symbol, interval=Client.KLINE_INTERVAL_1DAY, limit=200):
-        """Sembol için kapsamlı analiz yap"""
         print(f"\n{'='*70}")
         print(f"🚀 {symbol} ANALİZİ")
         print(f"{'='*70}")
         
-        # Mevcut interval'i sakla (filtreleme için)
         self.current_interval = interval
         
-        # Veri çek
         df = self.fetch_klines(symbol, interval, limit)
         if df is None:
             print("❌ Analiz yapılamadı - veri alınamadı")
             return False
         
-        # Zaman dilimine optimize edilmiş seviyeleri bul
         print("🔍 Zaman dilimine optimize edilmiş seviyeler tespit ediliyor...")
         supports, resistances = self.find_timeframe_optimized_levels(df, interval)
         
@@ -1394,13 +1347,10 @@ class CryptoAnalyzer:
         
         current_price = df['close'].iloc[-1]
         
-        # Trend analizi yap
         trend_analysis = self.analyze_trend(df, interval)
         
-        # Detaylı analiz sonuçlarını yazdır
         self.print_detailed_analysis(supports, resistances, self.get_timeframe_strategy(interval), current_price, trend_analysis)
         
-        # Grafik çiz
         print("\n📈 Gelişmiş grafik oluşturuluyor...")
         graph_success = self.plot_advanced_analysis(symbol, df, supports, resistances, self.get_timeframe_strategy(interval), interval)
         
@@ -1414,7 +1364,7 @@ class CryptoAnalyzer:
 
     def find_trend_lines(self, df, trend_type='up', lookback=50):
         """
-        Belirtilen trend tipine göre (up/down) basit regresyon ile trend çizgisi oluşturur.
+        Belirtilen trend tipine göre (up/down) basit regresyon ile trend çizgisi oluşturma
         """
         try:
             recent_data = df.tail(lookback)
@@ -1432,7 +1382,6 @@ class CryptoAnalyzer:
             return None, None, 0
 
     def _plot_weekly_analysis(self, symbol, df, supports, resistances, strategy):
-        """1 haftalık grafikler için sade analiz grafiği (pencerede gösterilir)"""
         try:
             fig, ax = plt.subplots(1, 1, figsize=(14, 8))
             current_price = df['close'].iloc[-1]
@@ -1446,7 +1395,6 @@ class CryptoAnalyzer:
             trend_lookback = min(50, len(df))
             trend_result = trend_analysis['direction'] if trend_analysis else 'YATAY'
 
-            # Trend çizgisi sadece belirgin trendler için çizilsin
             if trend_result == 'YÜKSELİŞ' and trend_analysis['strength'] in ['GÜÇLÜ', 'ORTA']:
                 x_up, trend_up, slope_up = self.find_trend_lines(df, trend_type='up', lookback=trend_lookback)
                 if x_up is not None and trend_up is not None and len(trend_up) == trend_lookback and slope_up > 0:
@@ -1467,7 +1415,7 @@ class CryptoAnalyzer:
                                  arrowprops=dict(facecolor='red', arrowstyle='->'))
             # YATAY trend için trend çizgisi çizilmez
 
-            # --- Legend Kutusu (Sağ alt köşe) ---
+            # Legend Kutusu
             legend_items = [
                 ("#008000", "Major Destek"),
                 ("#B22222", "Major Direnç"),
@@ -1493,7 +1441,6 @@ class CryptoAnalyzer:
                 fig.patches.append(mpatches.Rectangle((legend_x, legend_y), box_w, box_h, transform=fig.transFigure, facecolor=color, edgecolor='black', linewidth=0.5, alpha=0.8, zorder=10))
                 fig.text(legend_x + box_w + 0.002, legend_y + box_h/2, label, fontsize=6, va='center', ha='left', color='black', alpha=0.8)
 
-            # Trend yazısını legend kutusunun üstüne ekle
             fig.text(
                 x0,  # legend kutusuyla aynı x pozisyonu
                 y0 + 0.05,  # legend kutusunun üstünde
@@ -1542,11 +1489,10 @@ class CryptoAnalyzer:
             summary_lines.append(f"📊 ADX: {trend_analysis['adx_value']:.0f}")
             summary_lines.append(f"Kullanılan Destek: {len(supports)}, Direnç: {len(resistances)}")
             
-            # Fibonacci 100% seviyesini özet kutusuna ekle
             if 'fib_100.0' in fib_levels:
                 summary_lines.append(f"🔹 Fibonacci 100%: ${fib_levels['fib_100.0']:.2f}")
             
-            # Seviye sayılarını kategorilere göre göster
+            # Seviye sayılarını kategorilere göre gösterme
             major_supports = len([s for s in supports if s.get('priority') == 'MAJOR' or 'Tarihi' in s['type']])
             major_resistances = len([r for r in resistances if r.get('priority') == 'MAJOR' or 'Tarihi' in r['type']])
             fib_supports = len([s for s in supports if 'Fibonacci' in s['type']])
@@ -1573,7 +1519,6 @@ class CryptoAnalyzer:
             if 'fib_100.0' in fib_levels:
                 summary_lines.append(f"  📊 Fibonacci 100%: ${fib_levels['fib_100.0']:.2f}")
             
-            # Özet metnini sol alt köşeye yerleştir (legend kutusuyla çakışmayacak şekilde)
             summary_text = '\n'.join(summary_lines)
             ax.text(0.02, 0.05, summary_text, transform=ax.transAxes, 
                    fontsize=8, verticalalignment='bottom',
@@ -1592,7 +1537,7 @@ class CryptoAnalyzer:
             return False
 
 def validate_symbol(symbol):
-    """Kripto sembol formatını doğrula"""
+    """Kripto sembol formatını doğrulama"""
     symbol = symbol.strip().upper()
     if not symbol or not symbol.isalnum() or len(symbol) < 5:
         print("❌ Geçersiz sembol formatı")
@@ -1600,7 +1545,7 @@ def validate_symbol(symbol):
     return symbol
 
 def get_timeframe_choice():
-    """Kullanıcıdan zaman dilimi seçimi al"""
+    """Kullanıcıdan zaman dilimi seçimi alma"""
     print("\n⏰ Zaman Dilimi Seçiniz:")
     print("[1] 1 Saat - Scalping")
     print("[2] 4 Saat - Swing Trading") 
@@ -1697,17 +1642,16 @@ def main():
             if symbol:
                 break
         
-        # Zaman dilimi seç
+        # Zaman dilimi seçme
         interval, limit = get_timeframe_choice()
         
-        # Analizi başlat
+        # Analizi başlatma
         print(f"\n🚀 {symbol} analizi başlatılıyor...")
         success = analyzer.analyze_symbol(symbol, interval, limit)
         
         if success:
             print(f"\n✅ {symbol} analizi başarıyla tamamlandı!")
             
-            # Başka sembol analizi isteyip istemediğini sor
             while True:
                 choice = input("\n❓ Başka bir sembol analiz etmek ister misiniz? (e/h): ").lower()
                 if choice in ['e', 'evet', 'y', 'yes']:
