@@ -75,3 +75,10 @@ API_SECRET=your_secret_key_here
 
 # 4. Run the tool
 python Kripto5.1.py
+
+## 🖥️ Preview
+### 🔍Crypto and Timeframe Selection Panel
+![Ekran görüntüsübtc](https://github.com/user-attachments/assets/fb819abd-d69a-4db5-94ea-1094b0966a79)
+
+### 🤖 Strategy Analysis Results
+![Figure_btc](https://github.com/user-attachments/assets/ddc48c80-5214-4d7d-a99a-d4f1d8b51605)
