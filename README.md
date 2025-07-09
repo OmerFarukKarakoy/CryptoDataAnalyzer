@@ -75,6 +75,7 @@ API_SECRET=your_secret_key_here
 
 # 4. Run the tool
 python Kripto5.1.py
+```
 
 ## 🖥️ Preview
 ### 🔍Crypto and Timeframe Selection Panel
