@@ -142,4 +142,8 @@ python Kripto5.1.py
 📧 Mail: omerfarukkarakoy@gmail.com
 
 ---
+## License
 
+This project is licensed under the MIT License.  
+© 2025 Ömer Faruk Karakoy — You are free to use, modify, and distribute this software.  
+Provided "as is", without warranty of any kind.
