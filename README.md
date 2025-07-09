@@ -90,3 +90,7 @@ python Kripto5.1.py
 
 ####♥ Days
 ![Figure-btcusdtdays](https://github.com/user-attachments/assets/db6b867d-759b-46e3-8707-68e934e917ab)
+
+####♦ Weekly
+![Figure_btcusdtweekly](https://github.com/user-attachments/assets/19ef6425-2de8-4626-a882-60aff4a1f5a4)
+
