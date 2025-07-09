@@ -88,3 +88,5 @@ python Kripto5.1.py
 ####☻ 4 Hours
 ![Figure_btcusdt4hours](https://github.com/user-attachments/assets/26f74d21-b6c6-4a5e-bc07-653043fc02f4)
 
+####♥ Days
+![Figure-btcusdtdays](https://github.com/user-attachments/assets/db6b867d-759b-46e3-8707-68e934e917ab)
